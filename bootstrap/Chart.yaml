@@ -1,0 +1,4 @@
+apiVersion: v2
+name: bootstrap
+description: Bootstrap chart for the Argo CD App of Apps
+version: 0.1.0
