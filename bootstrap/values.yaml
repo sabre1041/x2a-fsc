@@ -1,0 +1,21 @@
+gitops:
+  repoURL: https://github.com/sabre1041/x2a-fsc.git
+  targetRevision: main
+
+argocd:
+  namespace: openshift-gitops
+
+cluster:
+  subdomain: ""
+  apiServer: ""
+
+
+
+devspaces:
+  enabled: true
+  name: devspaces
+  namespace: openshift-devspaces
+
+developerHub:
+  name: developer-hub
+  namespace: rhdh
