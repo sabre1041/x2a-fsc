@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+{{ include "bootstrap.metadata" (dict "name" "developer-hub-operator" "namespace" .Values.argocd.namespace "syncWave" "2") }}
+spec:
+  destination:
+    namespace: {{ .Values.developerHub.namespace }}
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: components/developer-hub-operator
+    repoURL: {{ .Values.gitops.repoURL }}
+    targetRevision: {{ .Values.gitops.revision }}
+    helm:
+      valuesObject:
+        namespace: {{ .Values.developerHub.namespace }}
+        operator:
+          source: redhat-operators
+{{ include "bootstrap.syncPolicy" . | indent 2 }}

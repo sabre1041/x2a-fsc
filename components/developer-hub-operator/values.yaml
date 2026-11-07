@@ -1,0 +1,13 @@
+namespace: rhdh
+
+operator:
+  channel: fast-1.10
+  #startingCSV: rhdh-operator.v1.9.3
+  installPlanApproval: Manual
+  source: redhat-operators
+
+vault:
+  name: vault
+  namespace: vault
+
+syncWave: "2"
