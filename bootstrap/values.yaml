@@ -9,8 +9,6 @@ cluster:
   subdomain: ""
   apiServer: ""
 
-
-
 devspaces:
   enabled: true
   name: devspaces
