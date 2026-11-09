@@ -1,0 +1,14 @@
+namespace: external-secrets-operator
+
+operator:
+  channel: stable-v1
+  #startingCSV: rhdh-operator.v1.9.3
+  installPlanApproval: Manual
+  source: redhat-operators
+  name: openshift-external-secrets-operator
+
+vault:
+  name: vault
+  namespace: vault
+
+syncWave: "2"

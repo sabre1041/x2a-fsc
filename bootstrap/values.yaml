@@ -1,6 +1,6 @@
 gitops:
   repoURL: https://github.com/sabre1041/x2a-fsc.git
-  targetRevision: main
+  revision: main
 
 argocd:
   namespace: openshift-gitops
@@ -8,6 +8,10 @@ argocd:
 cluster:
   subdomain: ""
   apiServer: ""
+
+externalSecrets:
+  name: external-secrets
+  namespace: external-secrets-operator
 
 devspaces:
   enabled: true
