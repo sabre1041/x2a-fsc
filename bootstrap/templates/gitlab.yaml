@@ -1,0 +1,101 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+{{ include "bootstrap.metadata" (dict "name" .Values.gitlab.name "namespace" .Values.argocd.namespace "syncWave" "1") }}
+spec:
+  destination:
+    namespace: {{ .Values.gitlab.namespace }}
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: components/gitlab
+    repoURL: {{ .Values.gitops.repoURL }}
+    targetRevision: {{ .Values.gitops.revision }}
+    helm:
+      releaseName: {{ .Values.gitlab.name }}
+      valuesObject:
+        gitlab:
+          global:
+            edition: ce
+            hosts:
+              domain: {{ .Values.deployer.domain }}
+              https: true
+              gitlab:
+                name: gitlab.{{ .Values.deployer.domain }}
+            ingress:
+              annotations:
+                route.openshift.io/termination: edge
+              configureCertmanager: false
+              class: openshift-default
+              tls:
+                enabled: false
+          installCertmanager: false
+          upgradeCheck:
+            enabled: false
+          nginx-ingress:
+            enabled: false
+          prometheus:
+            install: false
+          registry:
+            enabled: false
+          gitlab-runner:
+            install: false
+
+          postgresql:
+            image:
+              debug: false
+
+          redis:
+            master:
+              persistence:
+                size: 8Gi
+
+          gitlab:
+            webservice:
+              minReplicas: 1
+              maxReplicas: 1
+              workerProcesses: 2
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 2Gi
+                limits:
+                  cpu: "2"
+                  memory: 4Gi
+
+            sidekiq:
+              minReplicas: 1
+              maxReplicas: 1
+              livenessProbe:
+                initialDelaySeconds: 180
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 1Gi
+                limits:
+                  cpu: "1"
+                  memory: 3Gi
+
+            toolbox:
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              backups:
+                cron:
+                  enabled: false
+
+            gitlab-shell:
+              enabled: false
+
+            gitaly:
+              persistence:
+                size: 50Gi
+
+          minio:
+            persistence:
+              size: 10Gi
+
+{{ include "bootstrap.syncPolicy" . | indent 2 }}
