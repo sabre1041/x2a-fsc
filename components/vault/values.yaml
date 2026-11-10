@@ -1,0 +1,13 @@
+setup:
+  x2ansible:
+    policy: x2ansible-policy
+    role: x2ansible-role
+    namespace: x2ansible
+    serviceaccount:
+      namespace: x2ansible
+      name: vault-auth
+
+llm:
+  apiKey: ""
+  apiUrl: ""
+  model: ""

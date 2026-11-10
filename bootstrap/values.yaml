@@ -25,3 +25,8 @@ developerHub:
 vault:
   name: vault
   namespace: vault
+
+litemaas:
+  apiKey: ""
+  apiUrl: ""
+  model: ""

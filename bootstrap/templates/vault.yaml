@@ -15,6 +15,14 @@ spec:
     path: components/vault
     repoURL: {{ .Values.gitops.repoURL }}
     targetRevision: {{ .Values.gitops.revision }}
+{{- if and .Values.litemaas .Values.litemaas.apiKey .Values.litemaas.apiUrl }}
+    helm:
+      valuesObject:
+        llm:
+          apiKey: {{ .Values.litemaas.apiKey | quote }}
+          apiUrl: {{ .Values.litemaas.apiUrl | quote }}
+          model: {{ .Values.litemaas.model | quote }}
+{{- end }}
   syncPolicy:
     automated: {}
     syncOptions:
