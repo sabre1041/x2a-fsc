@@ -18,6 +18,8 @@ spec:
 {{- if and .Values.litemaas .Values.litemaas.apiKey .Values.litemaas.apiUrl }}
     helm:
       valuesObject:
+        global:
+          localClusterDomain: {{ .Values.deployer.domain }}
         llm:
           apiKey: {{ .Values.litemaas.apiKey | quote }}
           apiUrl: {{ .Values.litemaas.apiUrl | quote }}
