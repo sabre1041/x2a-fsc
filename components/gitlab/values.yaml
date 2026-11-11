@@ -1,0 +1,11 @@
+setup:
+  vault:
+    # Namespace and pod name of the Vault instance to store the x2ansible
+    # credentials in (via `kubectl exec` into the Vault pod)
+    namespace: vault
+    pod: vault-0
+  x2ansible:
+    username: x2ansible
+    name: x2ansible
+    email: x2ansible@redhat.com
+    password: r3dh@t123

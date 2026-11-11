@@ -98,4 +98,8 @@ spec:
             persistence:
               size: 10Gi
 
+          setup:
+            vault:
+              namespace: {{ .Values.vault.namespace }}
+
 {{ include "bootstrap.syncPolicy" . | indent 2 }}
