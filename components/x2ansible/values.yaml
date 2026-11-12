@@ -1,14 +1,8 @@
 setup:
   aap:
-    # URL of the Ansible Automation Platform gateway, injected into the AAP
-    # credentials Secret (from the bootstrap chart)
-    url: ""
     # Admin credentials used to configure the platform
     adminUser: admin
     adminPassword: ""
-    # Name of the organization to create, injected into the AAP credentials
-    # Secret. Must match the organization configured by the AAP chart
-    organization: x2ansible
   vault:
     # Namespace and pod name of the Vault instance to store the x2ansible
     # API token in (via `kubectl exec` into the Vault pod)

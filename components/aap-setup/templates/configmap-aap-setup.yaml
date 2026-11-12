@@ -194,7 +194,7 @@ data:
           kubernetes.core.k8s_exec:
             namespace: '{{ "{{" }} vault_namespace {{ "}}" }}'
             pod: '{{ "{{" }} vault_pod {{ "}}" }}'
-            command: 'sh -c "VAULT_TOKEN={{ "{{" }} vault_token {{ "}}" }} vault kv put secret/x2ansible/aap username={{ "{{" }} aap_username {{ "}}" }} token={{ "{{" }} x2ansible_aap_token {{ "}}" }}"'
+            command: 'sh -c "VAULT_TOKEN={{ "{{" }} vault_token {{ "}}" }} vault kv put secret/x2ansible/aap url={{ "{{" }} aap_url {{ "}}" }} organization={{ "{{" }} aap_organization {{ "}}" }} username={{ "{{" }} aap_username {{ "}}" }} token={{ "{{" }} x2ansible_aap_token {{ "}}" }}"'
           register: r_vault_put
           until: r_vault_put is succeeded
           retries: 10

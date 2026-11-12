@@ -19,7 +19,6 @@ spec:
             url: {{ .Values.aap.url }}
             adminUser: {{ .Values.aap.adminUser }}
             adminPassword: {{ .Values.aap.adminPassword }}
-            organization: x2ansible
           vault:
             namespace: {{ .Values.vault.namespace }}
 
