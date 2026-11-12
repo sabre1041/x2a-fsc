@@ -169,7 +169,7 @@ data:
           kubernetes.core.k8s_exec:
             namespace: '{{ "{{" }} vault_namespace {{ "}}" }}'
             pod: '{{ "{{" }} vault_pod {{ "}}" }}'
-            command: 'sh -c "VAULT_TOKEN={{ "{{" }} vault_token {{ "}}" }} vault kv put secret/x2ansible/gitlab username={{ "{{" }} x2ansible.username {{ "}}" }} client_id={{ "{{" }} x2ansible_client_id {{ "}}" }} client_secret={{ "{{" }} x2ansible_client_secret {{ "}}" }}"'
+            command: 'sh -c "VAULT_TOKEN={{ "{{" }} vault_token {{ "}}" }} vault kv put secret/x2ansible/gitlab url={{ "{{" }} gitlab_url {{ "}}" }} username={{ "{{" }} x2ansible.username {{ "}}" }} client_id={{ "{{" }} x2ansible_client_id {{ "}}" }} client_secret={{ "{{" }} x2ansible_client_secret {{ "}}" }}"'
           register: r_vault_put
           until: r_vault_put is succeeded
           retries: 10
