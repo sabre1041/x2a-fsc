@@ -1,0 +1,32 @@
+setup:
+  aap:
+    # URL of the Ansible Automation Platform gateway
+    url: ""
+    # Admin credentials used to configure the platform
+    adminUser: admin
+    adminPassword: ""
+    # Name of the organization to create
+    organization: x2ansible
+  vault:
+    # Namespace and pod name of the Vault instance to store the x2ansible
+    # API token in (via `kubectl exec` into the Vault pod)
+    namespace: vault
+    pod: vault-0
+    # Full URL of the Vault API server. When empty, derived from the
+    # namespace as https://vault.<namespace>.svc.cluster.local:8200
+    server: ""
+    auth:
+      # Kubernetes auth mount and role created by the Vault chart's setup job
+      mountPath: kubernetes
+      role: x2ansible-role
+      serviceAccount:
+        # Service account bound to the Vault role, created by this chart
+        name: vault-auth
+
+externalSecrets:
+  secretStore:
+    # Name of the SecretStore providing access to Vault
+    name: vault
+    # ConfigMap annotated to receive the OpenShift service CA bundle used to
+    # verify the Vault server TLS certificate
+    caBundleConfigMap: vault-service-ca

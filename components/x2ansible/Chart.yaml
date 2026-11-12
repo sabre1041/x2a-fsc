@@ -1,0 +1,6 @@
+apiVersion: v2
+name: x2ansible
+description: A Helm chart to configure x2ansible resources
+type: application
+
+version: 0.2.0

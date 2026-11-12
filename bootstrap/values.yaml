@@ -30,6 +30,10 @@ gitlab:
   name: gitlab
   namespace: gitlab
 
+x2ansible:
+  name: x2ansible
+  namespace: x2ansible
+
 aap:
   name: aap
   namespace: aap

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.externalSecrets.secretStore.caBundleConfigMap }}
+  labels:
+    {{- include "x2ansible.labels" . | nindent 4 }}
+  annotations:
+    # Inject the OpenShift service CA bundle used to verify the Vault
+    # server TLS certificate
+    service.beta.openshift.io/inject-cabundle: "true"
