@@ -87,10 +87,6 @@ data:
           register: r_x2ansible_created
           when: r_x2ansible_user.json | length == 0
 
-        - name: Set x2ansible user id fact
-          ansible.builtin.set_fact:
-            x2ansible_user_id: '{{ "{{" }} r_x2ansible_user.json[0].id if r_x2ansible_created is skipped else r_x2ansible_created.json.id {{ "}}" }}'
-
         - name: Wait for Vault token secret to be populated
           kubernetes.core.k8s_info:
             kind: Secret
@@ -119,48 +115,61 @@ data:
           failed_when: r_vault_gitlab_secret.rc not in [0, 2]
 
         # Vault KV mounts may be v1 (data.<key>) or v2 (data.data.<key>);
-        # handle both when extracting the stored token.
+        # handle both when extracting the stored credentials.
         - name: Parse Vault secret data
           ansible.builtin.set_fact:
             gitlab_vault_data: '{{ "{{" }} (r_vault_gitlab_secret.stdout | from_json).data | default({}) {{ "}}" }}'
           when: r_vault_gitlab_secret.rc == 0
 
-        - name: Set existing GitLab token fact
+        - name: Set existing GitLab OAuth client id fact
           ansible.builtin.set_fact:
-            x2ansible_existing_token: '{{ "{{" }} gitlab_vault_data.get("data", gitlab_vault_data).get("token", "") {{ "}}" }}'
+            x2ansible_existing_client_id: '{{ "{{" }} gitlab_vault_data.get("data", gitlab_vault_data).get("client_id", "") {{ "}}" }}'
           when: r_vault_gitlab_secret.rc == 0
 
-        - name: Set empty GitLab token fact
+        - name: Set existing GitLab OAuth client secret fact
           ansible.builtin.set_fact:
-            x2ansible_existing_token: ""
+            x2ansible_existing_client_secret: '{{ "{{" }} gitlab_vault_data.get("data", gitlab_vault_data).get("client_secret", "") {{ "}}" }}'
+          when: r_vault_gitlab_secret.rc == 0
+
+        - name: Set empty GitLab OAuth client id fact
+          ansible.builtin.set_fact:
+            x2ansible_existing_client_id: ""
           when: r_vault_gitlab_secret.rc == 2
 
-        - name: Create x2ansible personal access token
+        - name: Set empty GitLab OAuth client secret fact
+          ansible.builtin.set_fact:
+            x2ansible_existing_client_secret: ""
+          when: r_vault_gitlab_secret.rc == 2
+
+        - name: Create x2ansible OAuth application
           ansible.builtin.uri:
-            url: '{{ "{{" }} gitlab_url {{ "}}" }}/api/v4/users/{{ "{{" }} x2ansible_user_id {{ "}}" }}/personal_access_tokens'
+            url: '{{ "{{" }} gitlab_url {{ "}}" }}/api/v4/applications'
             method: POST
             headers:
               Authorization: 'Bearer {{ "{{" }} gitlab_token {{ "}}" }}'
             body_format: json
             body:
               name: x2ansible-automation
-              scopes:
-                - api
-              expires_at: '{{ "{{" }} "%Y-%m-%d" | strftime((now(utc=true).timestamp() + 31536000) | int) {{ "}}" }}'
+              redirect_uri: 'http://localhost:7007/api/auth/gitlab/handler/frame'
+              scopes: 'read_user read_repository write_repository openid profile email'
             validate_certs: false
             status_code: 201
-          register: r_x2ansible_pat
-          when: x2ansible_existing_token | length == 0
+          register: r_x2ansible_oauth
+          when: x2ansible_existing_client_id | length == 0
 
-        - name: Set x2ansible PAT fact
+        - name: Set x2ansible OAuth client id fact
           ansible.builtin.set_fact:
-            x2ansible_pat: '{{ "{{" }} x2ansible_existing_token if x2ansible_existing_token | length > 0 else r_x2ansible_pat.json.token {{ "}}" }}'
+            x2ansible_client_id: '{{ "{{" }} x2ansible_existing_client_id if x2ansible_existing_client_id | length > 0 else r_x2ansible_oauth.json.application_id {{ "}}" }}'
+
+        - name: Set x2ansible OAuth client secret fact
+          ansible.builtin.set_fact:
+            x2ansible_client_secret: '{{ "{{" }} x2ansible_existing_client_secret if x2ansible_existing_client_secret | length > 0 else r_x2ansible_oauth.json.secret {{ "}}" }}'
 
         - name: Store GitLab x2ansible credentials in Vault
           kubernetes.core.k8s_exec:
             namespace: '{{ "{{" }} vault_namespace {{ "}}" }}'
             pod: '{{ "{{" }} vault_pod {{ "}}" }}'
-            command: 'sh -c "VAULT_TOKEN={{ "{{" }} vault_token {{ "}}" }} vault kv put secret/x2ansible/gitlab username={{ "{{" }} x2ansible.username {{ "}}" }} token={{ "{{" }} x2ansible_pat {{ "}}" }}"'
+            command: 'sh -c "VAULT_TOKEN={{ "{{" }} vault_token {{ "}}" }} vault kv put secret/x2ansible/gitlab username={{ "{{" }} x2ansible.username {{ "}}" }} client_id={{ "{{" }} x2ansible_client_id {{ "}}" }} client_secret={{ "{{" }} x2ansible_client_secret {{ "}}" }}"'
           register: r_vault_put
           until: r_vault_put is succeeded
           retries: 10
