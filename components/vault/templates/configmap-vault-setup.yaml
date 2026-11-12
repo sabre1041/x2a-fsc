@@ -93,7 +93,7 @@ data:
 
         - name: Enable kv Secrets engine
           ansible.builtin.shell: |
-            oc exec vault-0 -n {{ "{{" }} vault_namespace {{ "}}" }} -- vault secrets enable -path=secret kv
+            oc exec vault-0 -n {{ "{{" }} vault_namespace {{ "}}" }} -- vault secrets enable -version=2 -path=secret kv
           when: '"secret/" not in r_secrets_list.stdout'
 
         - name: Create role and service account authentication

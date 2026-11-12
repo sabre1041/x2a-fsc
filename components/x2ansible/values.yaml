@@ -36,4 +36,4 @@ externalSecrets:
     name: gitlab-oauth-client
     # Path of the Vault KV secret (within the "secret" mount) storing the
     # GitLab OAuth client credentials
-    vaultPath: x2ansible/gitlab
+    vaultPath: secret/x2ansible/gitlab
