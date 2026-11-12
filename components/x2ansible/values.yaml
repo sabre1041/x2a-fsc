@@ -15,6 +15,7 @@ setup:
     # Full URL of the Vault API server. When empty, derived from the
     # namespace as https://vault.<namespace>.svc.cluster.local:8200
     server: ""
+    path: secret
     auth:
       # Kubernetes auth mount and role created by the Vault chart's setup job
       mountPath: kubernetes
@@ -36,4 +37,4 @@ externalSecrets:
     name: gitlab-oauth-client
     # Path of the Vault KV secret (within the "secret" mount) storing the
     # GitLab OAuth client credentials
-    vaultPath: secret/x2ansible/gitlab
+    vaultPath: x2ansible/gitlab
