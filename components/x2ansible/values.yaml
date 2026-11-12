@@ -24,9 +24,11 @@ externalSecrets:
   secretStore:
     # Name of the SecretStore providing access to Vault
     name: vault
-    # ConfigMap annotated to receive the OpenShift service CA bundle used to
-    # verify the Vault server TLS certificate
-    caBundleConfigMap: vault-service-ca
+    # ConfigMap holding the OpenShift service CA bundle used to verify the
+    # Vault server TLS certificate. Defaults to the openshift-service-ca.crt
+    # ConfigMap that the service CA operator automatically creates and keeps
+    # up to date in every namespace.
+    caBundleConfigMap: openshift-service-ca.crt
   gitlabOAuth:
     # Name of the ExternalSecret and target Secret holding the GitLab OAuth
     # client credentials created by the GitLab chart's setup job
@@ -48,3 +50,18 @@ externalSecrets:
     # Path of the Vault KV secret (within the "secret" mount) storing the
     # LLM credentials
     vaultPath: x2ansible/llm
+
+rhdh:
+  serviceAccount:
+    name: x2a-sa
+  persistentVolumeClaim:
+    size: 2Gi
+  configMap:
+    dynamicPlugins:
+      name: dynamic-plugins
+    rhdhAppConfig:
+      name: app-config-rhdh
+
+x2a:
+  image: quay.io/x2ansible/x2a-convertor
+  imageTag: v1.1.0
