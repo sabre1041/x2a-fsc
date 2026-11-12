@@ -73,16 +73,28 @@ data:
             oc exec vault-0 -n {{ "{{" }} vault_namespace {{ "}}" }} -- bash -c 'echo } >> /tmp/x2ansible-policy.hcl'
             oc exec vault-0 -n {{ "{{" }} vault_namespace {{ "}}" }} -- bash -c 'vault policy write x2ansible-policy /tmp/x2ansible-policy.hcl'
 
+        - name: Check enabled auth methods
+          ansible.builtin.shell: |
+            oc exec vault-0 -n {{ "{{" }} vault_namespace {{ "}}" }} -- vault auth list -format=json
+          register: r_auth_list
+
         - name: Enable kubernetes auth
           ansible.builtin.shell: |
             oc exec vault-0 -n {{ "{{" }} vault_namespace {{ "}}" }} -- vault auth enable kubernetes
             oc exec vault-0 -n {{ "{{" }} vault_namespace {{ "}}" }} -- vault write auth/kubernetes/config \
             kubernetes_host="https://kubernetes.default.svc" \
             kubernetes_ca_cert="@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+          when: '"kubernetes/" not in r_auth_list.stdout'
+
+        - name: Check existing secrets engines
+          ansible.builtin.shell: |
+            oc exec vault-0 -n {{ "{{" }} vault_namespace {{ "}}" }} -- vault secrets list -format=json
+          register: r_secrets_list
 
         - name: Enable kv Secrets engine
           ansible.builtin.shell: |
             oc exec vault-0 -n {{ "{{" }} vault_namespace {{ "}}" }} -- vault secrets enable -path=secret kv
+          when: '"secret/" not in r_secrets_list.stdout'
 
         - name: Create role and service account authentication
           ansible.builtin.shell: |
