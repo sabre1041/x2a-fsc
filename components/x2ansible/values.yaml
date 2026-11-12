@@ -30,3 +30,10 @@ externalSecrets:
     # ConfigMap annotated to receive the OpenShift service CA bundle used to
     # verify the Vault server TLS certificate
     caBundleConfigMap: vault-service-ca
+  gitlabOAuth:
+    # Name of the ExternalSecret and target Secret holding the GitLab OAuth
+    # client credentials created by the GitLab chart's setup job
+    name: gitlab-oauth-client
+    # Path of the Vault KV secret (within the "secret" mount) storing the
+    # GitLab OAuth client credentials
+    vaultPath: x2ansible/gitlab
