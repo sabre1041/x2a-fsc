@@ -1,0 +1,27 @@
+{{- if and $.Values.aap $.Values.aap.url $.Values.aap.adminUser $.Values.aap.adminPassword }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+{{ include "bootstrap.metadata" (dict "name" .Values.aap.name "namespace" .Values.argocd.namespace "syncWave" "2") }}
+spec:
+  destination:
+    namespace: {{ .Values.aap.namespace }}
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: components/aap-setup
+    repoURL: {{ .Values.gitops.repoURL }}
+    targetRevision: {{ .Values.gitops.revision }}
+    helm:
+      releaseName: {{ .Values.aap.name }}
+      valuesObject:
+        setup:
+          aap:
+            url: {{ .Values.aap.url }}
+            adminUser: {{ .Values.aap.adminUser }}
+            adminPassword: {{ .Values.aap.adminPassword }}
+            organization: x2ansible
+          vault:
+            namespace: {{ .Values.vault.namespace }}
+
+{{ include "bootstrap.syncPolicy" . | indent 2 }}
+{{- end }}

@@ -30,6 +30,13 @@ gitlab:
   name: gitlab
   namespace: gitlab
 
+aap:
+  name: aap
+  namespace: aap
+  url: ""
+  adminUser: admin
+  adminPassword: ""
+
 litemaas:
   apiKey: ""
   apiUrl: ""

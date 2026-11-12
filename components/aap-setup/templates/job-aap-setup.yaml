@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: aap-setup
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  backoffLimit: 100
+  template:
+    spec:
+      containers:
+        - name: setup-aap
+          command:
+            - /bin/bash
+            - '-c'
+            - |
+              set -x
+              ansible-playbook -i localhost /scripts/playbook.yaml
+          image: quay.io/agnosticd/ee-multicloud:latest
+          volumeMounts:
+            - mountPath: /scripts
+              name: aap-setup-vol
+      restartPolicy: Never
+      serviceAccountName: aap-setup
+      volumes:
+        - name: aap-setup-vol
+          configMap:
+            name: configmap-aap-setup

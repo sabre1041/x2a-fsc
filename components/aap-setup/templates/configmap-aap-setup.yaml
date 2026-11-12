@@ -1,0 +1,201 @@
+{{- $aapUrl := required "setup.aap.url must be set" $.Values.setup.aap.url }}
+{{- $aapPassword := required "setup.aap.adminPassword must be set" $.Values.setup.aap.adminPassword }}
+kind: ConfigMap
+metadata:
+  name: configmap-aap-setup
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+apiVersion: v1
+data:
+  playbook.yaml: |
+    ---
+    - name: Setup Ansible Automation Platform
+      hosts: localhost
+      connection: local
+      gather_facts: false
+      vars:
+        aap_url: {{ $aapUrl | quote }}
+        aap_username: {{ $.Values.setup.aap.adminUser | quote }}
+        aap_password: {{ $aapPassword | quote }}
+        aap_organization: {{ $.Values.setup.aap.organization | quote }}
+        aap_organization_description: {{ printf "%s organization" $.Values.setup.aap.organization | quote }}
+        vault_namespace: {{ $.Values.setup.vault.namespace }}
+        vault_pod: {{ $.Values.setup.vault.pod }}
+      tasks:
+        - name: Wait for Ansible Automation Platform to be available
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/controller/v2/ping/'
+            method: GET
+            validate_certs: false
+            status_code: 200
+          register: r_aap_ping
+          retries: 120
+          delay: 10
+          until: r_aap_ping.status == 200
+
+        - name: Check if organization exists in the platform gateway
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/gateway/v1/organizations/?name={{ "{{" }} aap_organization | urlencode {{ "}}" }}'
+            method: GET
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            status_code: 200
+          register: r_gateway_org
+
+        - name: Create organization in the platform gateway
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/gateway/v1/organizations/'
+            method: POST
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            body_format: json
+            body:
+              name: '{{ "{{" }} aap_organization {{ "}}" }}'
+              description: '{{ "{{" }} aap_organization_description {{ "}}" }}'
+            status_code: 201
+          register: r_gateway_org_created
+          when: r_gateway_org.json.count == 0
+          changed_when: r_gateway_org_created.status == 201
+
+        - name: Update organization description in the platform gateway
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/gateway/v1/organizations/{{ "{{" }} r_gateway_org.json.results[0].id {{ "}}" }}/'
+            method: PATCH
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            body_format: json
+            body:
+              description: '{{ "{{" }} aap_organization_description {{ "}}" }}'
+            status_code: 200
+          register: r_gateway_org_updated
+          when:
+            - r_gateway_org.json.count > 0
+            - r_gateway_org.json.results[0].description | default('') != aap_organization_description
+          changed_when: r_gateway_org_updated.status == 200
+
+        - name: Check if organization exists in automation controller
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/controller/v2/organizations/?name={{ "{{" }} aap_organization | urlencode {{ "}}" }}'
+            method: GET
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            status_code: 200
+          register: r_controller_org
+
+        - name: Create organization in automation controller
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/controller/v2/organizations/'
+            method: POST
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            body_format: json
+            body:
+              name: '{{ "{{" }} aap_organization {{ "}}" }}'
+              description: '{{ "{{" }} aap_organization_description {{ "}}" }}'
+            status_code: 201
+          register: r_controller_org_created
+          when: r_controller_org.json.count == 0
+          changed_when: r_controller_org_created.status == 201
+
+        - name: Update organization description in automation controller
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/controller/v2/organizations/{{ "{{" }} r_controller_org.json.results[0].id {{ "}}" }}/'
+            method: PATCH
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            body_format: json
+            body:
+              description: '{{ "{{" }} aap_organization_description {{ "}}" }}'
+            status_code: 200
+          register: r_controller_org_updated
+          when:
+            - r_controller_org.json.count > 0
+            - r_controller_org.json.results[0].description | default('') != aap_organization_description
+          changed_when: r_controller_org_updated.status == 200
+
+        - name: Wait for Vault token secret to be populated
+          kubernetes.core.k8s_info:
+            kind: Secret
+            name: vault-token
+            namespace: '{{ "{{" }} vault_namespace {{ "}}" }}'
+          register: r_vault_token
+          retries: 120
+          delay: 5
+          until:
+            - r_vault_token.resources is defined
+            - r_vault_token.resources | length > 0
+            - r_vault_token.resources[0].data is defined
+            - r_vault_token.resources[0].data.token is defined
+            - r_vault_token.resources[0].data.token | length > 0
+
+        - name: Set Vault token fact
+          ansible.builtin.set_fact:
+            vault_token: '{{ "{{" }} r_vault_token.resources[0].data.token | b64decode {{ "}}" }}'
+
+        - name: Read existing AAP token from Vault
+          kubernetes.core.k8s_exec:
+            namespace: '{{ "{{" }} vault_namespace {{ "}}" }}'
+            pod: '{{ "{{" }} vault_pod {{ "}}" }}'
+            command: 'sh -c "VAULT_TOKEN={{ "{{" }} vault_token {{ "}}" }} vault kv get -format=json secret/x2ansible/aap"'
+          register: r_vault_aap_secret
+          failed_when: r_vault_aap_secret.rc not in [0, 2]
+
+        # Vault KV mounts may be v1 (data.<key>) or v2 (data.data.<key>);
+        # handle both when extracting the stored token.
+        - name: Parse Vault secret data
+          ansible.builtin.set_fact:
+            aap_vault_data: '{{ "{{" }} (r_vault_aap_secret.stdout | from_json).data | default({}) {{ "}}" }}'
+          when: r_vault_aap_secret.rc == 0
+
+        - name: Set existing AAP token fact
+          ansible.builtin.set_fact:
+            x2ansible_existing_token: '{{ "{{" }} aap_vault_data.get("data", aap_vault_data).get("token", "") {{ "}}" }}'
+          when: r_vault_aap_secret.rc == 0
+
+        - name: Set empty AAP token fact
+          ansible.builtin.set_fact:
+            x2ansible_existing_token: ""
+          when: r_vault_aap_secret.rc == 2
+
+        - name: Create x2ansible API token
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/gateway/v1/tokens/'
+            method: POST
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            body_format: json
+            body:
+              description: x2ansible-automation
+              scope: write
+            status_code: 201
+          register: r_aap_token_created
+          when: x2ansible_existing_token | length == 0
+          changed_when: r_aap_token_created.status == 201
+
+        - name: Set x2ansible API token fact
+          ansible.builtin.set_fact:
+            x2ansible_aap_token: '{{ "{{" }} x2ansible_existing_token if x2ansible_existing_token | length > 0 else r_aap_token_created.json.token {{ "}}" }}'
+
+        - name: Store AAP x2ansible credentials in Vault
+          kubernetes.core.k8s_exec:
+            namespace: '{{ "{{" }} vault_namespace {{ "}}" }}'
+            pod: '{{ "{{" }} vault_pod {{ "}}" }}'
+            command: 'sh -c "VAULT_TOKEN={{ "{{" }} vault_token {{ "}}" }} vault kv put secret/x2ansible/aap username={{ "{{" }} aap_username {{ "}}" }} token={{ "{{" }} x2ansible_aap_token {{ "}}" }}"'
+          register: r_vault_put
+          until: r_vault_put is succeeded
+          retries: 10
+          delay: 5

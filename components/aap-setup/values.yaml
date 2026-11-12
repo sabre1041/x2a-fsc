@@ -1,0 +1,14 @@
+setup:
+  aap:
+    # URL of the Ansible Automation Platform gateway
+    url: ""
+    # Admin credentials used to configure the platform
+    adminUser: admin
+    adminPassword: ""
+    # Name of the organization to create
+    organization: x2ansible
+  vault:
+    # Namespace and pod name of the Vault instance to store the x2ansible
+    # API token in (via `kubectl exec` into the Vault pod)
+    namespace: vault
+    pod: vault-0
