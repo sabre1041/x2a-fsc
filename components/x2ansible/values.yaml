@@ -1,11 +1,13 @@
 setup:
   aap:
-    # URL of the Ansible Automation Platform gateway
+    # URL of the Ansible Automation Platform gateway, injected into the AAP
+    # credentials Secret (from the bootstrap chart)
     url: ""
     # Admin credentials used to configure the platform
     adminUser: admin
     adminPassword: ""
-    # Name of the organization to create
+    # Name of the organization to create, injected into the AAP credentials
+    # Secret. Must match the organization configured by the AAP chart
     organization: x2ansible
   vault:
     # Namespace and pod name of the Vault instance to store the x2ansible
@@ -38,3 +40,17 @@ externalSecrets:
     # Path of the Vault KV secret (within the "secret" mount) storing the
     # GitLab OAuth client credentials
     vaultPath: x2ansible/gitlab
+  aap:
+    # Name of the ExternalSecret and target Secret holding the AAP
+    # credentials created by the AAP chart's setup job
+    name: aap-credentials
+    # Path of the Vault KV secret (within the "secret" mount) storing the
+    # AAP credentials
+    vaultPath: x2ansible/aap
+  llm:
+    # Name of the ExternalSecret and target Secret holding the LLM
+    # credentials populated by the Vault chart's setup job
+    name: llm-credentials
+    # Path of the Vault KV secret (within the "secret" mount) storing the
+    # LLM credentials
+    vaultPath: x2ansible/llm

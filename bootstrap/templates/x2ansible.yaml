@@ -14,6 +14,8 @@ spec:
       releaseName: {{ .Values.x2ansible.name }}
       valuesObject:
         setup:
+          aap:
+            url: {{ .Values.aap.url }}
           vault:
             namespace: {{ .Values.vault.namespace }}
 {{ include "bootstrap.syncPolicy" . | indent 2 }}
