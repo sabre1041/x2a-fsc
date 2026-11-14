@@ -7,6 +7,13 @@ setup:
     adminPassword: ""
     # Name of the organization to create
     organization: x2ansible
+    # Dedicated platform admin user for automation
+    x2ansible:
+      username: x2ansible
+      password: x2ansible
+      email: x2ansible@redhat.com
+      firstName: X2ansible
+      lastName: X2ansible
   vault:
     # Namespace and pod name of the Vault instance to store the x2ansible
     # API token in (via `kubectl exec` into the Vault pod)

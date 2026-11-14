@@ -19,6 +19,12 @@ data:
         aap_password: {{ $aapPassword | quote }}
         aap_organization: {{ $.Values.setup.aap.organization | quote }}
         aap_organization_description: {{ printf "%s organization" $.Values.setup.aap.organization | quote }}
+        aap_x2ansible_username: {{ $.Values.setup.aap.x2ansible.username | quote }}
+        aap_x2ansible_password: {{ $.Values.setup.aap.x2ansible.password | quote }}
+        aap_x2ansible_email: {{ $.Values.setup.aap.x2ansible.email | quote }}
+        aap_x2ansible_first_name: {{ $.Values.setup.aap.x2ansible.firstName | quote }}
+        aap_x2ansible_last_name: {{ $.Values.setup.aap.x2ansible.lastName | quote }}
+        aap_platform_admin_role: "Platform Administrator"
         vault_namespace: {{ $.Values.setup.vault.namespace }}
         vault_pod: {{ $.Values.setup.vault.pod }}
       tasks:
@@ -124,6 +130,117 @@ data:
             - r_controller_org.json.count > 0
             - r_controller_org.json.results[0].description | default('') != aap_organization_description
           changed_when: r_controller_org_updated.status == 200
+
+        - name: Check if x2ansible user exists in the platform gateway
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/gateway/v1/users/?username={{ "{{" }} aap_x2ansible_username | urlencode {{ "}}" }}'
+            method: GET
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            status_code: 200
+          register: r_gateway_user
+
+        - name: Create x2ansible user in the platform gateway
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/gateway/v1/users/'
+            method: POST
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            body_format: json
+            body:
+              username: '{{ "{{" }} aap_x2ansible_username {{ "}}" }}'
+              password: '{{ "{{" }} aap_x2ansible_password {{ "}}" }}'
+              email: '{{ "{{" }} aap_x2ansible_email {{ "}}" }}'
+              first_name: '{{ "{{" }} aap_x2ansible_first_name {{ "}}" }}'
+              last_name: '{{ "{{" }} aap_x2ansible_last_name {{ "}}" }}'
+            status_code: 201
+          register: r_gateway_user_created
+          when: r_gateway_user.json.count == 0
+          changed_when: r_gateway_user_created.status == 201
+
+        - name: Set x2ansible user id fact
+          ansible.builtin.set_fact:
+            x2ansible_user_id: '{{ "{{" }} r_gateway_user.json.results[0].id if r_gateway_user.json.count > 0 else r_gateway_user_created.json.id {{ "}}" }}'
+
+        - name: List role definitions in the platform gateway
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/gateway/v1/role_definitions/?page_size=200'
+            method: GET
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            status_code: 200
+          register: r_gateway_role_definitions
+
+        - name: Find the Platform Administrator role definition
+          ansible.builtin.set_fact:
+            x2ansible_platform_admin_role_id: '{{ "{{" }} (r_gateway_role_definitions.json.results | selectattr("name", "equalto", aap_platform_admin_role) | map(attribute="id") | list | first) | default("") {{ "}}" }}'
+
+        - name: Report missing Platform Administrator role definition
+          ansible.builtin.debug:
+            msg: >-
+              Role definition '{{ "{{" }} aap_platform_admin_role {{ "}}" }}' was not found in the platform gateway
+              (available: {{ "{{" }} r_gateway_role_definitions.json.results | map(attribute="name") | list {{ "}}" }}).
+              Falling back to the superuser flag for platform administrator permissions.
+          when: x2ansible_platform_admin_role_id | length == 0
+
+        - name: Check if x2ansible has the Platform Administrator role
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/gateway/v1/role_user_assignments/?user={{ "{{" }} x2ansible_user_id {{ "}}" }}'
+            method: GET
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            status_code: 200
+          register: r_x2ansible_role_assignment
+          when: x2ansible_platform_admin_role_id | length > 0
+
+        - name: Assign the Platform Administrator role to x2ansible
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/gateway/v1/role_user_assignments/'
+            method: POST
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            body_format: json
+            body:
+              user: '{{ "{{" }} x2ansible_user_id {{ "}}" }}'
+              role_definition: '{{ "{{" }} x2ansible_platform_admin_role_id {{ "}}" }}'
+            status_code: 201
+          register: r_x2ansible_role_assigned
+          when:
+            - x2ansible_platform_admin_role_id | length > 0
+            - r_x2ansible_role_assignment.json.results | selectattr("role_definition", "equalto", x2ansible_platform_admin_role_id | int) | list | length == 0
+          changed_when: r_x2ansible_role_assigned.status == 201
+
+        - name: Set x2ansible superuser fact
+          ansible.builtin.set_fact:
+            x2ansible_is_superuser: '{{ "{{" }} (r_gateway_user.json.results[0].is_superuser if r_gateway_user.json.count > 0 else r_gateway_user_created.json.is_superuser) | bool {{ "}}" }}'
+
+        - name: Grant platform administrator permissions via the superuser flag
+          ansible.builtin.uri:
+            url: '{{ "{{" }} aap_url {{ "}}" }}/api/gateway/v1/users/{{ "{{" }} x2ansible_user_id {{ "}}" }}/'
+            method: PATCH
+            url_username: '{{ "{{" }} aap_username {{ "}}" }}'
+            url_password: '{{ "{{" }} aap_password {{ "}}" }}'
+            force_basic_auth: true
+            validate_certs: false
+            body_format: json
+            body:
+              is_superuser: true
+            status_code: 200
+          register: r_x2ansible_superuser_set
+          when:
+            - x2ansible_platform_admin_role_id | length == 0
+            - not (x2ansible_is_superuser | bool)
+          changed_when: r_x2ansible_superuser_set.status == 200
 
         - name: Wait for Vault token secret to be populated
           kubernetes.core.k8s_info:
