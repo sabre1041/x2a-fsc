@@ -44,6 +44,9 @@ aap:
   url: ""
   adminUser: admin
   adminPassword: ""
+  hub:
+    # Storage class for automation hub file storage (must support ReadWriteMany)
+    fileStorageStorageClass: ocs-external-storagecluster-cephfs
 
 litemaas:
   apiKey: ""

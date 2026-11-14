@@ -19,3 +19,17 @@ setup:
     # API token in (via `kubectl exec` into the Vault pod)
     namespace: vault
     pod: vault-0
+
+# AnsibleAutomationPlatform custom resource updated by this chart (via ArgoCD
+# server-side apply) after the setup job completes
+ansibleAutomationPlatform:
+  # Name and namespace of the existing AnsibleAutomationPlatform CR
+  name: aap
+  namespace: aap
+  hub:
+    # Content storage type; "file" uses the storage class below
+    storageType: file
+    # Storage class for hub file storage (must support ReadWriteMany);
+    # when empty, the cluster default storage class is used
+    fileStorageStorageClass: ""
+    fileStorageSize: 10Gi

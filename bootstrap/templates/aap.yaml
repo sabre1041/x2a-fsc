@@ -21,6 +21,11 @@ spec:
             adminPassword: {{ .Values.aap.adminPassword }}
           vault:
             namespace: {{ .Values.vault.namespace }}
+        ansibleAutomationPlatform:
+          name: {{ .Values.aap.name }}
+          namespace: {{ .Values.aap.namespace }}
+          hub:
+            fileStorageStorageClass: {{ .Values.aap.hub.fileStorageStorageClass }}
 
 {{ include "bootstrap.syncPolicy" . | indent 2 }}
 {{- end }}
