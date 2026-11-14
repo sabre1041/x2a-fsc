@@ -1,0 +1,54 @@
+gitops:
+  repoURL: https://github.com/sabre1041/x2a-fsc.git
+  revision: main
+
+argocd:
+  namespace: openshift-gitops
+
+# Injected by the field-content deployer
+deployer:
+  domain: ""
+
+cluster:
+  subdomain: ""
+  apiServer: ""
+
+externalSecrets:
+  name: external-secrets
+  namespace: external-secrets-operator
+
+devspaces:
+  enabled: true
+  name: devspaces
+  namespace: openshift-devspaces
+
+developerHub:
+  name: developer-hub
+  namespace: rhdh
+
+vault:
+  name: vault
+  namespace: vault
+
+gitlab:
+  name: gitlab
+  namespace: gitlab
+
+x2ansible:
+  name: x2ansible
+  namespace: x2ansible
+
+aap:
+  name: aap
+  namespace: aap
+  url: ""
+  adminUser: admin
+  adminPassword: ""
+  hub:
+    # Storage class for automation hub file storage (must support ReadWriteMany)
+    fileStorageStorageClass: ocs-external-storagecluster-cephfs
+
+litemaas:
+  apiKey: ""
+  apiUrl: ""
+  model: ""

@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+{{ include "bootstrap.metadata" (dict "name" .Values.x2ansible.name "namespace" .Values.argocd.namespace "syncWave" "3") }}
+spec:
+  destination:
+    namespace: {{ .Values.x2ansible.namespace }}
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: components/x2ansible
+    repoURL: {{ .Values.gitops.repoURL }}
+    targetRevision: {{ .Values.gitops.revision }}
+    helm:
+      releaseName: {{ .Values.x2ansible.name }}
+      valuesObject:
+        deployer:
+          domain: {{ .Values.deployer.domain }}
+        setup:
+          vault:
+            namespace: {{ .Values.vault.namespace }}
+{{ include "bootstrap.syncPolicy" . | indent 2 }}

@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+{{ include "bootstrap.metadata" (dict "name" .Values.vault.name "namespace" .Values.argocd.namespace "syncWave" "0") }}
+spec:
+  destination:
+    namespace: {{ .Values.vault.namespace }}
+    server: https://kubernetes.default.svc
+  project: default
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jqPathExpressions:
+        - '.webhooks[]?.clientConfig.caBundle'
+  source:
+    path: components/vault
+    repoURL: {{ .Values.gitops.repoURL }}
+    targetRevision: {{ .Values.gitops.revision }}
+{{- if and .Values.litemaas .Values.litemaas.apiKey .Values.litemaas.apiUrl }}
+    helm:
+      valuesObject:
+        global:
+          localClusterDomain: {{ .Values.deployer.domain }}
+        llm:
+          apiKey: {{ .Values.litemaas.apiKey | quote }}
+          apiUrl: {{ .Values.litemaas.apiUrl | quote }}
+          model: {{ .Values.litemaas.model | quote }}
+{{- end }}
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true

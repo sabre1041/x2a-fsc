@@ -1,0 +1,11 @@
+apiVersion: v2
+name: vault
+description: A Helm chart to deploy Vault resources for Kubernetes
+type: application
+
+version: 0.1.0
+
+dependencies:
+  - name: hashicorp-vault
+    version: "0.1.11"
+    repository: "https://charts.validatedpatterns.io"

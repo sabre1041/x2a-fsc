@@ -1,0 +1,21 @@
+{{- $crName := required "ansibleAutomationPlatform.name must be set" $.Values.ansibleAutomationPlatform.name }}
+{{- $crNamespace := required "ansibleAutomationPlatform.namespace must be set" $.Values.ansibleAutomationPlatform.namespace }}
+{{- $hub := $.Values.ansibleAutomationPlatform.hub }}
+# Server-side applied onto the existing AnsibleAutomationPlatform CR so only
+# the hub fields below are updated; all other fields remain operator-owned
+apiVersion: aap.ansible.com/v1alpha1
+kind: AnsibleAutomationPlatform
+metadata:
+  name: {{ $crName }}
+  namespace: {{ $crNamespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-options: ServerSideApply=true
+spec:
+  hub:
+    disabled: false
+    storage_type: {{ $hub.storageType | quote }}
+    {{- with $hub.fileStorageStorageClass }}
+    file_storage_storage_class: {{ . | quote }}
+    {{- end }}
+    file_storage_size: {{ $hub.fileStorageSize | quote }}

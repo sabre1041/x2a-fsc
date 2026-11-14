@@ -1,0 +1,6 @@
+apiVersion: v2
+name: aap-setup
+description: A Helm chart to configure Ansible Automation Platform resources
+type: application
+
+version: 0.1.0

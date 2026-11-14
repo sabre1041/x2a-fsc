@@ -1,0 +1,32 @@
+{{- $gitlabHost := required "gitlab.global.hosts.gitlab.name must be set" $.Values.gitlab.global.hosts.gitlab.name }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gitlab-setup
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  backoffLimit: 100
+  template:
+    spec:
+      containers:
+        - name: setup-gitlab
+          command:
+            - /bin/bash
+            - '-c'
+            - |
+              set -x
+              ansible-playbook -i localhost /scripts/playbook.yaml
+          image: quay.io/agnosticd/ee-multicloud:latest
+          env:
+            - name: GITLAB_URL
+              value: {{ printf "%s://%s" (ternary "https" "http" (dig "https" true $.Values.gitlab.global.hosts)) $gitlabHost | quote }}
+          volumeMounts:
+            - mountPath: /scripts
+              name: gitlab-setup-vol
+      restartPolicy: Never
+      serviceAccountName: gitlab-setup
+      volumes:
+        - name: gitlab-setup-vol
+          configMap:
+            name: configmap-gitlab-setup

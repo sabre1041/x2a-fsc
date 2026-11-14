@@ -1,0 +1,178 @@
+---
+# ConfigMap: Application Configuration
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Values.rhdh.configMap.rhdhAppConfig.name }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+data:
+  app-config-rhdh.yaml: |
+
+    app:
+      extensions:
+        - 'api:app/app-language':
+            config:
+              defaultLanguage: en
+              availableLanguages:
+                - en
+                - de
+                - es
+                - fr
+                - it
+
+    backend:
+      cors:
+        origin:
+          # for @modelcontextprotocol/inspector, remove if not needed
+          - http://localhost:6274
+        credentials: true
+      actions:
+        pluginSources:
+          - 'x2a-mcp-extras'
+      reading:
+        allow:
+          - host: ${AUTH_GITLAB_HOST}
+
+    # Disable namespaced tool names for MCP actions
+    # Workaround for recent MCP server returning `undefined` for tool namespaces
+    # Will be solved by later @backstage/backend-defaults.
+    mcpActions:
+      namespacedToolNames: false
+
+    integrations:
+      # github:
+      #   - host: github.com
+      # CUSTOMIZE:
+      gitlab:
+        - host: ${AUTH_GITLAB_HOST} # Self-hosted GitLab
+          apiBaseUrl: https://${AUTH_GITLAB_HOST}/api/v4
+      # bitbucketCloud:
+      #   - host: bitbucket.org
+
+    auth:
+      experimentalDynamicClientRegistration:
+        # enable the feature
+        enabled: true
+        allowedRedirectUriPatterns:
+          - cursor://*
+          # CUSTOMIZE:
+          - https://*
+          - http://*
+
+      # see https://backstage.io/docs/auth/ to learn about auth providers
+      environment: development
+      providers:
+        # See https://backstage.io/docs/auth/guest/provider
+        # guest: {}
+
+        # CUSTOMIZE:
+        # github:
+        #   development:
+        #     clientId: ${AUTH_GITHUB_CLIENT_ID}
+        #     clientSecret: ${AUTH_GITHUB_CLIENT_SECRET}
+        #     signIn:
+        #       resolvers:
+        #         - resolver: usernameMatchingUserEntityName
+        #           dangerouslyAllowSignInWithoutUserInCatalog: true
+        # Bitbucket example for authentication
+        # bitbucket:
+        #   development:
+        #     clientId: ${AUTH_BITBUCKET_CLIENT_ID:-}
+        #     clientSecret: ${AUTH_BITBUCKET_CLIENT_SECRET:-}
+        #     signIn:
+        #       resolvers:
+        #         # The usernameMatchingUserEntityName resolver is not working for Bitbucket.
+        #         # Cannot make the bitbucket to provide user's email.
+        #         # See the org.yaml file for an example of how to use the usernameMatchingUserEntityAnnotation resolver.
+        #         - resolver: usernameMatchingUserEntityAnnotation
+        #           dangerouslyAllowSignInWithoutUserInCatalog: true
+
+        # Gitlab example for authentication
+        gitlab:
+          development:
+            clientId: ${AUTH_GITLAB_CLIENT_ID}
+            clientSecret: ${AUTH_GITLAB_CLIENT_SECRET}
+            audience: https://${AUTH_GITLAB_HOST}
+            callbackUrl: ${AUTH_GITLAB_CALLBACK_URL:-http://localhost:7007/api/auth/gitlab/handler/frame}
+            signIn:
+              resolvers:
+                - resolver: usernameMatchingUserEntityName
+                  dangerouslyAllowSignInWithoutUserInCatalog: true
+    signInPage:
+      #- github
+      - gitlab
+      # - bitbucket
+    dynamicPlugins:
+      frontend:
+        backstage.plugin-auth:
+          dynamicRoutes:
+            - path: /oauth2/*
+              importName: Router
+
+        red-hat-developer-hub.backstage-plugin-x2a:
+          scaffolderFieldExtensions:
+            - importName: RepoAuthenticationExtension
+            - importName: RulesAcceptanceExtension
+          translationResources:
+            - importName: x2aPluginTranslations
+              ref: x2aPluginTranslationRef
+          appIcons:
+            - name: x2aIcon
+              importName: X2AIcon
+          dynamicRoutes:
+            - path: /x2a
+              importName: X2APage
+              menuItem:
+                text: Conversion Hub
+                icon: x2aIcon
+
+    catalog:
+      locations:
+        # x2a Create Project template
+        - type: file
+          target: /opt/app-root/src/dynamic-plugins-root/red-hat-developer-hub-backstage-plugin-x2a-scaffolder-module/templates/conversion-project-template.yaml
+          rules:
+            - allow: [Template]
+        # CUSTOMIZATION: Remove or update per your organization and identity provider configured above
+        #- type: url
+        #  target: https://raw.githubusercontent.com/[your-org]/org.yaml
+        #  rules:
+        #    - allow: [User, Group]
+
+    # CUSTOMIZATION: see https://backstage.io/docs/permissions/getting-started for more on the permission framework
+    #permission:
+    #  # Set to false to disable RBAC checks
+    #  enabled: true
+    #  rbac:
+    #    policies-csv-file: ../../examples/example-rbac-policy.csv
+    #    policyFileReload: true
+    #    pluginsWithPermission:
+    #      - x2a
+    #    admin:
+    #      users:
+    #        - name: user:default/[your-user]
+
+    x2a:
+      callbackBaseUrl: http://${SERVICE_NAME}.${NAMESPACE}.svc.cluster.local/api/x2a
+      kubernetes:
+        image: "{{ .Values.x2a.image }}"
+        imageTag: "{{ .Values.x2a.imageTag }}"
+        ttlSecondsAfterFinished: 86400
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+      credentials:
+        llm:
+          LLM_MODEL: ${LLM_MODEL}
+          SUMMARY_CONTEXT_SIZE: medium
+          MAX_TOKENS: 32000
+        aap:
+          url: ${AAP_URL}
+          orgName: ${AAP_ORG_NAME}
+          oauthToken: ${AAP_OAUTH_TOKEN}
+          skipSSLVerification: ${AAP_SKIP_SSL_VERIFICATION:-false}

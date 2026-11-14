@@ -1,0 +1,15 @@
+---
+apiVersion: org.eclipse.che/v2
+kind: CheCluster
+metadata:
+  name: {{ include "devspaces-instance.name" . }}
+  namespace: {{ include "devspaces-instance.namespace" . }}
+  annotations:
+    {{- include "devspaces-instance.argocd-syncwave" . | nindent 4 }}
+spec:
+  devEnvironments:
+    defaultNamespace:
+      template: <username>-devspaces
+    maxNumberOfRunningWorkspacesPerUser: 5
+    storage:
+      pvcStrategy: per-workspace

@@ -1,0 +1,8 @@
+nameOverride: "devspaces"
+
+namespace: ""
+
+argocd:
+  enabled: true
+  instance:
+    syncwave: "0"

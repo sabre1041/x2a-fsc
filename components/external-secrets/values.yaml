@@ -1,0 +1,20 @@
+namespace: external-secrets-operator
+
+# Namespace the operator deploys its controller into. The Vault egress
+# NetworkPolicy is created here.
+controllerNamespace: external-secrets
+
+operator:
+  channel: stable-v1
+  #startingCSV: rhdh-operator.v1.9.3
+  installPlanApproval: Manual
+  source: redhat-operators
+  name: openshift-external-secrets-operator
+
+vault:
+  name: vault
+  namespace: vault
+  # Port of the Vault API listener
+  port: 8200
+
+syncWave: "2"

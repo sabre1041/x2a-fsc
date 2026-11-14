@@ -1,0 +1,52 @@
+---
+apiVersion: rhdh.redhat.com/v1alpha4
+kind: Backstage
+metadata:
+  name: developer-hub
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: ServerSideApply=true
+spec:
+  deployment:
+    patch:
+      spec:
+        template:
+          spec:
+            volumes:
+            - $patch: replace
+              name: dynamic-plugins-root
+              persistentVolumeClaim:
+                claimName: dynamic-plugins-root
+            serviceAccountName: {{ .Values.rhdh.serviceAccount.name }}
+            automountServiceAccountToken: true
+            containers:
+              - name: backstage-backend
+                env:
+                  - name: NODE_EXTRA_CA_CERTS
+                    value: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+                  - name: NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  - name: SERVICE_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.labels['rhdh.redhat.com/app']
+  application:
+    dynamicPluginsConfigMapName: {{ .Values.rhdh.configMap.dynamicPlugins.name }}
+    appConfig:
+      mountPath: /opt/app-root/src
+      configMaps:
+        - name: {{ .Values.rhdh.configMap.rhdhAppConfig.name }}
+    extraFiles:
+      mountPath: /opt/app-root/src
+    extraEnvs:
+      secrets:
+        - name: {{ .Values.externalSecrets.aap.name }}
+        - name: {{ .Values.externalSecrets.gitlabOAuth.name }}
+        - name: {{ .Values.externalSecrets.llm.name }}
+    route:
+      enabled: true
+      {{- if .Values.deployer.domain }}
+      host: x2ansible.{{ .Values.deployer.domain }}
+      {{- end }}

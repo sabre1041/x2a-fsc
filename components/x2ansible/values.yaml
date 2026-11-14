@@ -1,0 +1,72 @@
+deployer:
+  # Cluster apps domain injected by the deployer. When set, the Developer
+  # Hub Route is exposed at x2ansible.<deployer.domain>
+  domain: ""
+
+setup:
+  aap:
+    # Admin credentials used to configure the platform
+    adminUser: admin
+    adminPassword: ""
+  vault:
+    # Namespace and pod name of the Vault instance to store the x2ansible
+    # API token in (via `kubectl exec` into the Vault pod)
+    namespace: vault
+    pod: vault-0
+    # Full URL of the Vault API server. When empty, derived from the
+    # namespace as https://vault.<namespace>.svc.cluster.local:8200
+    server: ""
+    path: secret
+    auth:
+      # Kubernetes auth mount and role created by the Vault chart's setup job
+      mountPath: kubernetes
+      role: x2ansible-role
+      serviceAccount:
+        # Service account bound to the Vault role, created by this chart
+        name: vault-auth
+
+externalSecrets:
+  secretStore:
+    # Name of the SecretStore providing access to Vault
+    name: vault
+    # ConfigMap holding the OpenShift service CA bundle used to verify the
+    # Vault server TLS certificate. Defaults to the openshift-service-ca.crt
+    # ConfigMap that the service CA operator automatically creates and keeps
+    # up to date in every namespace.
+    caBundleConfigMap: openshift-service-ca.crt
+  gitlabOAuth:
+    # Name of the ExternalSecret and target Secret holding the GitLab OAuth
+    # client credentials created by the GitLab chart's setup job
+    name: gitlab-oauth-client
+    # Path of the Vault KV secret (within the "secret" mount) storing the
+    # GitLab OAuth client credentials
+    vaultPath: x2ansible/gitlab
+  aap:
+    # Name of the ExternalSecret and target Secret holding the AAP
+    # credentials created by the AAP chart's setup job
+    name: aap-credentials
+    # Path of the Vault KV secret (within the "secret" mount) storing the
+    # AAP credentials
+    vaultPath: x2ansible/aap
+  llm:
+    # Name of the ExternalSecret and target Secret holding the LLM
+    # credentials populated by the Vault chart's setup job
+    name: llm-credentials
+    # Path of the Vault KV secret (within the "secret" mount) storing the
+    # LLM credentials
+    vaultPath: x2ansible/llm
+
+rhdh:
+  serviceAccount:
+    name: x2a-sa
+  persistentVolumeClaim:
+    size: 2Gi
+  configMap:
+    dynamicPlugins:
+      name: dynamic-plugins
+    rhdhAppConfig:
+      name: app-config-rhdh
+
+x2a:
+  image: quay.io/x2ansible/x2a-convertor
+  imageTag: v1.1.0
