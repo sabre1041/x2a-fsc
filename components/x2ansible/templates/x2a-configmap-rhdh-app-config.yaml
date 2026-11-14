@@ -94,9 +94,7 @@ data:
             clientId: ${AUTH_GITLAB_CLIENT_ID}
             clientSecret: ${AUTH_GITLAB_CLIENT_SECRET}
             audience: https://${AUTH_GITLAB_HOST}
-            {{- if .Values.deployer.domain }}
-            callbackUrl: https://x2ansible.{{ .Values.deployer.domain }}/api/auth/gitlab/handler/frame
-            {{- end }}
+            callbackUrl: ${AUTH_GITLAB_CALLBACK_URL:-http://localhost:7007/api/auth/gitlab/handler/frame}
             signIn:
               resolvers:
                 - resolver: usernameMatchingUserEntityName
