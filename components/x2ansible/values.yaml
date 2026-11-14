@@ -1,3 +1,8 @@
+deployer:
+  # Cluster apps domain injected by the deployer. When set, the Developer
+  # Hub Route is exposed at x2ansible.<deployer.domain>
+  domain: ""
+
 setup:
   aap:
     # Admin credentials used to configure the platform

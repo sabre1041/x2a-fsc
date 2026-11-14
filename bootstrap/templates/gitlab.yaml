@@ -13,6 +13,8 @@ spec:
     helm:
       releaseName: {{ .Values.gitlab.name }}
       valuesObject:
+        deployer:
+          domain: {{ .Values.deployer.domain }}
         gitlab:
           global:
             edition: ce

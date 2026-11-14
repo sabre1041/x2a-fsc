@@ -5,6 +5,10 @@ gitops:
 argocd:
   namespace: openshift-gitops
 
+# Injected by the field-content deployer
+deployer:
+  domain: ""
+
 cluster:
   subdomain: ""
   apiServer: ""

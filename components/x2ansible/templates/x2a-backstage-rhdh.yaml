@@ -47,3 +47,6 @@ spec:
         - name: {{ .Values.externalSecrets.llm.name }}
     route:
       enabled: true
+      {{- if .Values.deployer.domain }}
+      host: x2ansible.{{ .Values.deployer.domain }}
+      {{- end }}

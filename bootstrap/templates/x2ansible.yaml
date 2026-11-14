@@ -13,6 +13,8 @@ spec:
     helm:
       releaseName: {{ .Values.x2ansible.name }}
       valuesObject:
+        deployer:
+          domain: {{ .Values.deployer.domain }}
         setup:
           vault:
             namespace: {{ .Values.vault.namespace }}

@@ -1,3 +1,8 @@
+deployer:
+  # Cluster apps domain injected by the deployer. When set, the x2ansible
+  # Developer Hub OAuth callback URL is derived from x2ansible.<deployer.domain>
+  domain: ""
+
 setup:
   vault:
     # Namespace and pod name of the Vault instance to store the x2ansible

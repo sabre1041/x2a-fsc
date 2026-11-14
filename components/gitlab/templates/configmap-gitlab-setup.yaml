@@ -14,6 +14,7 @@ data:
         gitlab_url: "{{ "{{" }} lookup('ansible.builtin.env', 'GITLAB_URL') {{ "}}" }}"
         vault_namespace: {{ $.Values.setup.vault.namespace }}
         vault_pod: {{ $.Values.setup.vault.pod }}
+        x2ansible_oauth_callback_url: "{{ if $.Values.deployer.domain }}https://x2ansible.{{ $.Values.deployer.domain }}/api/auth/gitlab/handler/frame{{ else }}http://localhost:7007/api/auth/gitlab/handler/frame{{ end }}"
         x2ansible:
           username: {{ $.Values.setup.x2ansible.username | quote }}
           name: {{ $.Values.setup.x2ansible.name | quote }}
@@ -150,7 +151,7 @@ data:
             body_format: json
             body:
               name: x2ansible-automation
-              redirect_uri: 'http://localhost:7007/api/auth/gitlab/handler/frame'
+              redirect_uri: '{{ "{{" }} x2ansible_oauth_callback_url {{ "}}" }}'
               scopes: 'read_user read_repository write_repository openid profile email'
             validate_certs: false
             status_code: 201
