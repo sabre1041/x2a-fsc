@@ -93,6 +93,7 @@ data:
           development:
             clientId: ${AUTH_GITLAB_CLIENT_ID}
             clientSecret: ${AUTH_GITLAB_CLIENT_SECRET}
+            audience: https://${AUTH_GITLAB_HOST}
             signIn:
               resolvers:
                 - resolver: usernameMatchingUserEntityName
