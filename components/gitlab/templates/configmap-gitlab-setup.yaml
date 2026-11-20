@@ -152,7 +152,7 @@ data:
             body:
               name: x2ansible-automation
               redirect_uri: '{{ "{{" }} x2ansible_oauth_callback_url {{ "}}" }}'
-              scopes: 'read_user read_repository write_repository openid profile email'
+              scopes: 'api read_api read_user read_repository write_repository openid profile email'
             validate_certs: false
             status_code: 201
           register: r_x2ansible_oauth

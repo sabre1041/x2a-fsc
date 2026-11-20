@@ -155,6 +155,9 @@ data:
 
     x2a:
       callbackBaseUrl: http://${SERVICE_NAME}.${NAMESPACE}.svc.cluster.local/api/x2a
+      scm:
+        authHosts:
+          gitlab: ${AUTH_GITLAB_HOST}
       kubernetes:
         image: "{{ .Values.x2a.image }}"
         imageTag: "{{ .Values.x2a.imageTag }}"
