@@ -114,6 +114,7 @@ data:
           scaffolderFieldExtensions:
             - importName: RepoAuthenticationExtension
             - importName: RulesAcceptanceExtension
+            - importName: X2ARepoUrlPickerExtension
           translationResources:
             - importName: x2aPluginTranslations
               ref: x2aPluginTranslationRef
@@ -172,6 +173,13 @@ data:
       credentials:
         llm:
           LLM_MODEL: ${LLM_MODEL}
+          # Forward the OpenAI-compatible endpoint to the migration job.
+          # These are injected into the RHDH pod from the llm-credentials
+          # Secret, but must be listed here explicitly: the plugin copies
+          # this map into the job's project Secret, which is the only way
+          # x2a-convertor (litellm) receives them.
+          OPENAI_API_BASE: ${OPENAI_API_BASE:-}
+          OPENAI_API_KEY: ${OPENAI_API_KEY:-}
           SUMMARY_CONTEXT_SIZE: medium
           MAX_TOKENS: 32000
         aap:

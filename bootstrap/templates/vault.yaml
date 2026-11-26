@@ -15,7 +15,7 @@ spec:
     path: components/vault
     repoURL: {{ .Values.gitops.repoURL }}
     targetRevision: {{ .Values.gitops.revision }}
-{{- if and .Values.litemaas .Values.litemaas.apiKey .Values.litemaas.apiUrl }}
+{{- if and .Values.litemaas .Values.litemaas.apiKey .Values.litemaas.apiUrl .Values.litemaas.model }}
     helm:
       valuesObject:
         global:
@@ -23,7 +23,11 @@ spec:
         llm:
           apiKey: {{ .Values.litemaas.apiKey | quote }}
           apiUrl: {{ .Values.litemaas.apiUrl | quote }}
-          model: {{ .Values.litemaas.model | quote }}
+          # litellm (used by x2a-convertor) requires a provider/model string.
+          # LiteMaaS serves OpenAI-compatible endpoints
+          # The RHDP deployer injects the bare model id (e.g. gpt-oss-120b-a5b),
+          # so add the provider prefix unless one is already present.
+          model: {{ if contains "/" .Values.litemaas.model }}{{ .Values.litemaas.model | quote }}{{ else }}{{ printf "openai/%s" .Values.litemaas.model | quote }}{{ end }}
 {{- end }}
   syncPolicy:
     automated: {}
